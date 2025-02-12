@@ -11,11 +11,74 @@
       }
    ],
    "components": {
+      "securitySchemes": {
+         "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+         }
+      },
       "schemas": {
+         "User": {
+            "type": "object",
+            "properties": {
+               "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "username": {
+                  "type": "string"
+               },
+               "password": {
+                  "type": "string"
+               }
+            },
+            "required": [
+               "id",
+               "username",
+               "password"
+            ],
+            "description": "A book record with all its properties",
+            "title": "User"
+         },
+         "UserCreate": {
+            "type": "object",
+            "properties": {
+               "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "username": {
+                  "type": "string",
+                  "minLength": 4,
+                  "maxLength": 255
+               },
+               "password": {
+                  "type": "string",
+                  "minLength": 4,
+                  "maxLength": 40,
+                  "pattern": "[A-Z]"
+               }
+            },
+            "required": [
+               "username",
+               "password"
+            ],
+            "additionalProperties": false,
+            "description": "Schema for creating a new book record",
+            "title": "UserCreate"
+         },
          "Book": {
             "type": "object",
             "properties": {
                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "user_id": {
                   "type": "integer",
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
@@ -38,6 +101,7 @@
             },
             "required": [
                "id",
+               "user_id",
                "author_id",
                "title",
                "pub_year",
@@ -52,6 +116,11 @@
                "id": {
                   "type": "integer",
                   "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "user_id": {
+                  "type": "integer",
+                  "minimum": 0,
                   "maximum": 9007199254740991
                },
                "author_id": {
@@ -129,6 +198,11 @@
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
                },
+               "user_id": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+               },
                "author_id": {
                   "type": "integer",
                   "minimum": -9007199254740991,
@@ -190,62 +264,15 @@
             "description": "Schema for updating an existing book record",
             "title": "BookUpdate"
          },
-         "BookQuery": {
-            "type": "object",
-            "properties": {
-               "title": {
-                  "type": "string",
-                  "description": "Search by book title (partial match)",
-                  "example": "Gatsby"
-               },
-               "genre": {
-                  "type": "string",
-                  "description": "Filter by genre",
-                  "example": "Fiction",
-                  "enum": [
-                     "Fiction",
-                     "Non-Fiction",
-                     "Mystery",
-                     "Science Fiction",
-                     "Fantasy",
-                     "Romance",
-                     "Thriller",
-                     "Horror",
-                     "Biography",
-                     "History",
-                     "Science",
-                     "Poetry",
-                     "Drama",
-                     "Children"
-                  ]
-               },
-               "pub_year": {
-                  "type": "string",
-                  "pattern": "^\\d{4}$",
-                  "description": "Filter by publication year",
-                  "example": "2023"
-               }
-            },
-            "description": "Schema for querying books with various filters",
-            "title": "BookQuery"
-         },
-         "ParamsId": {
-            "type": "object",
-            "properties": {
-               "id": {
-                  "type": "number",
-                  "minimum": 0,
-                  "exclusiveMinimum": true
-               }
-            },
-            "required": [
-               "id"
-            ]
-         },
          "Author": {
             "type": "object",
             "properties": {
                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "user_id": {
                   "type": "integer",
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
@@ -260,6 +287,7 @@
             },
             "required": [
                "id",
+               "user_id",
                "name",
                "bio"
             ],
@@ -272,6 +300,11 @@
                "id": {
                   "type": "integer",
                   "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+               },
+               "user_id": {
+                  "type": "integer",
+                  "minimum": 0,
                   "maximum": 9007199254740991
                },
                "name": {
@@ -305,6 +338,11 @@
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991
                },
+               "user_id": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+               },
                "name": {
                   "type": "string",
                   "minLength": 1,
@@ -324,31 +362,150 @@
             "additionalProperties": false,
             "description": "Schema for updating an existing author record",
             "title": "AuthorUpdate"
-         },
-         "AuthorQuery": {
-            "type": "object",
-            "properties": {
-               "name": {
-                  "type": "string",
-                  "description": "Search by author name (partial match)",
-                  "example": "Jane"
-               },
-               "bio": {
-                  "type": "string",
-                  "description": "Search within author biography (partial match)",
-                  "example": "award-winning"
-               }
-            },
-            "description": "Schema for querying authors with various filters",
-            "title": "AuthorQuery"
          }
       },
       "parameters": {}
    },
    "paths": {
+      "/signup": {
+         "post": {
+            "description": "Register a new user",
+            "tags": [
+               "Authentication"
+            ],
+            "requestBody": {
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/UserCreate"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "201": {
+                  "description": "User created successfully",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/User"
+                        }
+                     }
+                  }
+               },
+               "409": {
+                  "description": "Username already exists"
+               }
+            }
+         }
+      },
+      "/me": {
+         "post": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "description": "Logout user and invalidate tokens",
+            "tags": [
+               "Authentication"
+            ],
+            "responses": {
+               "200": {
+                  "description": "Decoded Token",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/User"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Invalid token"
+               }
+            }
+         }
+      },
+      "/logout": {
+         "post": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
+            "description": "Logout user and invalidate tokens",
+            "tags": [
+               "Authentication"
+            ],
+            "responses": {
+               "200": {
+                  "description": "Successfully logged out"
+               },
+               "401": {
+                  "description": "Invalid token"
+               }
+            }
+         }
+      },
+      "/access-token": {
+         "post": {
+            "description": "Authorize user credentials",
+            "tags": [
+               "Authentication"
+            ],
+            "requestBody": {
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/User"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "Authorization successful",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "type": "object",
+                           "properties": {
+                              "type": {
+                                 "type": "string"
+                              },
+                              "token": {
+                                 "type": "string",
+                                 "description": "JWT Bearer token"
+                              }
+                           },
+                           "required": [
+                              "type",
+                              "token"
+                           ],
+                           "description": "Authentication response with user data and JWT token",
+                           "title": "AuthResponse"
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Invalid credentials"
+               },
+               "404": {
+                  "description": "Username not found"
+               }
+            }
+         }
+      },
       "/books": {
          "get": {
             "description": "Get all books with optional filtering",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Books"
             ],
@@ -409,7 +566,29 @@
                         "schema": {
                            "type": "array",
                            "items": {
-                              "$ref": "#/components/schemas/Book"
+                              "allOf": [
+                                 {
+                                    "$ref": "#/components/schemas/Book"
+                                 },
+                                 {
+                                    "type": "object",
+                                    "properties": {
+                                       "name": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 100,
+                                          "pattern": "^[a-zA-Z\\s\\-'\\p{L}\\p{M}]+$",
+                                          "description": "Author's full name",
+                                          "example": "Jane Austen"
+                                       }
+                                    },
+                                    "required": [
+                                       "name"
+                                    ]
+                                 }
+                              ],
+                              "description": "A book record with all its properties",
+                              "title": "Book"
                            }
                         }
                      }
@@ -419,6 +598,11 @@
          },
          "post": {
             "description": "Create a new book",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Books"
             ],
@@ -450,6 +634,11 @@
       },
       "/books/{id}": {
          "get": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "description": "Get a book by its ID",
             "tags": [
                "Books"
@@ -483,6 +672,11 @@
             }
          },
          "put": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "description": "Update an existing book",
             "tags": [
                "Books"
@@ -529,6 +723,11 @@
          },
          "delete": {
             "description": "Delete a book",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Books"
             ],
@@ -557,6 +756,11 @@
       "/authors": {
          "get": {
             "description": "Get all authors",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Authors"
             ],
@@ -600,6 +804,11 @@
          },
          "post": {
             "description": "Create an author",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Authors"
             ],
@@ -622,6 +831,9 @@
                         }
                      }
                   }
+               },
+               "409": {
+                  "description": "Author already exists!"
                }
             }
          }
@@ -629,6 +841,11 @@
       "/authors/{id}": {
          "get": {
             "description": "Get author by id",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Authors"
             ],
@@ -662,6 +879,11 @@
          },
          "put": {
             "description": "Update an author",
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "tags": [
                "Authors"
             ],
@@ -703,6 +925,11 @@
             }
          },
          "delete": {
+            "security": [
+               {
+                  "bearerAuth": []
+               }
+            ],
             "description": "Delete an author",
             "tags": [
                "Authors"
@@ -742,6 +969,9 @@
                },
                "404": {
                   "description": "Not found"
+               },
+               "409": {
+                  "description": "Author is a dependency, cannot be deleted!"
                }
             }
          }
