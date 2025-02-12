@@ -1,5 +1,6 @@
 import { isLoggedIn, useAuth } from '#/hooks/useAuth';
 import { NavLink } from 'react-router';
+import { Github } from 'lucide-react';
 
 export default () => {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ export default () => {
                 : (<></>)
             }
           </div>
+          <div className="flex items-center">
           {
             isLoggedIn()
               ? (
@@ -63,6 +65,16 @@ export default () => {
                 </>
               )
           }
+          <a 
+            href="https://github.com/satwikShresth/Library"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={"flex items-center gap-2 px-6 py-4" + navLinkClasses({ isActive: false })}
+          >
+            <Github size={20} />
+            <span>GitHub</span>
+          </a>
+        </div>
         </div>
       </div>
     </nav>
